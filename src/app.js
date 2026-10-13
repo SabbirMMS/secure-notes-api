@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+import authRoutes from './routes/authRoutes.js';
 
 export const app = express();
 
@@ -13,6 +14,8 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+app.use('/api/auth', authRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
