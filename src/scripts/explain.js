@@ -13,28 +13,36 @@ function visit(value, fn) {
 function printExplain(label, result) {
   let winningPlan;
   let stats;
-  const indexes = new Set();
 
   visit(result, (part) => {
     if (!winningPlan && part.queryPlanner?.winningPlan) winningPlan = part.queryPlanner.winningPlan;
     if (!stats && part.executionStats) stats = part.executionStats;
   });
 
-  visit(winningPlan, (part) => {
-    if (part.indexName) indexes.add(part.indexName);
-  });
-  visit(result, (part) => {
-    if (Array.isArray(part.indexesUsed)) part.indexesUsed.forEach((name) => indexes.add(name));
+  const scanStages = new Set(['IXSCAN', 'EXPRESS_IXSCAN', 'COLLSCAN']);
+  let scan;
+  const findScan = (plan) => visit(plan, (part) => {
+    if (!scan && scanStages.has(part.stage)) scan = part;
   });
 
-  const stage = winningPlan?.stage ?? winningPlan?.queryPlan?.stage ?? stats?.executionStages?.stage ?? 'unknown';
+  findScan(winningPlan);
+  if (!scan) {
+    for (const part of result.stages ?? []) {
+      findScan(part.$cursor?.queryPlanner?.winningPlan);
+      if (scan) break;
+    }
+  }
+  if (!scan) findScan(stats?.executionStages);
+
+  const stage = scan?.stage ?? 'unknown';
+  const index = scan?.indexName ?? 'none';
   const pipelineStages = result.stages ?? [];
   const cursorDocs = pipelineStages.reduce((sum, part) => sum + (part.$cursor?.executionStats?.totalDocsExamined ?? 0), 0);
   const lookupDocs = pipelineStages.reduce((sum, part) => sum + (part.$lookup?.totalDocsExamined ?? 0), 0);
   const totalDocsExamined = pipelineStages.length ? cursorDocs + lookupDocs : stats?.totalDocsExamined ?? 0;
   const nReturned = pipelineStages.at(-1)?.nReturned ?? stats?.nReturned ?? 0;
 
-  console.log(`${label}: stage=${stage}, index=${[...indexes].join(', ') || 'none'}, totalDocsExamined=${totalDocsExamined}, nReturned=${nReturned}`);
+  console.log(`${label}: stage=${stage}, index=${index}, totalDocsExamined=${totalDocsExamined}, nReturned=${nReturned}`);
 }
 
 async function explain(label, query) {

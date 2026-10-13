@@ -73,7 +73,7 @@ All listed indexes are declared with `schema.index()`; MongoDB also provides its
 | Index | Query it supports | Why no other index is needed |
 | --- | --- | --- |
 | `User { email: 1 }`, unique | Login, duplicate email enforcement, admin email filter | Exact email lookup uses this index; unfiltered users use `_id`. |
-| `User { interests: 1 }`, multikey | First `$match` of filtered interest grouping | Unfiltered grouping scans users; another interest index would not help. |
+| `User { interests: 1 }`, multikey | First `$match` of filtered interest grouping | No additional index is needed for the unfiltered grouping, since it must read every user. |
 | `Note { owner: 1, _id: -1 }` | Own notes and admin owner filter, newest first | Admin all-notes list and single-note reads use the default `_id` index. |
 | `Post { author: 1, _id: -1 }` | User-posts `$lookup` and one author's newest posts | Public all-posts list and single-post reads use the default `_id` index. |
 
