@@ -2,18 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { User } from '../models/User.js';
-
-function publicUser(user) {
-  return {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    interests: user.interests,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
-}
+import { publicUser } from '../utils/publicUser.js';
 
 export async function register(req, res, next) {
   try {
