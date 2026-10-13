@@ -5,6 +5,7 @@ import { requireRole } from '../middleware/requireRole.js';
 import { validate } from '../middleware/validate.js';
 import { paginationQuery } from '../utils/pagination.js';
 import { createUser, deleteUser, getUser, listAllNotes, listUsers, updateUser } from '../controllers/adminController.js';
+import { groupUsersByInterests } from '../controllers/aggregationController.js';
 
 const router = Router();
 const empty = z.object({}).strict();
@@ -23,6 +24,11 @@ router.use(auth, requireRole('admin'));
 router.get('/notes', validate({ body: empty, query: paginationQuery.extend({ owner: objectId.optional() }).strict(), params: empty }), listAllNotes);
 router.post('/users', validate({ body: userBody, query: empty, params: empty }), createUser);
 router.get('/users', validate({ body: empty, query: paginationQuery.extend({ email: z.string().trim().email().toLowerCase().optional() }).strict(), params: empty }), listUsers);
+router.get('/users/grouped-by-interests', validate({
+  body: empty,
+  query: paginationQuery.extend({ interest: z.string().trim().min(1).optional() }).strict(),
+  params: empty,
+}), groupUsersByInterests);
 router.get('/users/:id', validate({ body: empty, query: empty, params: idParams }), getUser);
 router.patch('/users/:id', validate({ body: patchBody, query: empty, params: idParams }), updateUser);
 router.delete('/users/:id', validate({ body: empty, query: empty, params: idParams }), deleteUser);
